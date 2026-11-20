@@ -1,0 +1,34 @@
+// Quick visual check: node scripts/shot.mjs [seed] → screenshots in shots/
+import fs from 'node:fs';
+import { gpuInfo, launch, URL_BASE } from './browser.mjs';
+
+const seed = process.argv[2] ?? 'KESTREL-2306';
+fs.mkdirSync('shots', { recursive: true });
+const { browser, page } = await launch({ width: 1600, height: 900 });
+console.log(await gpuInfo(page));
+await page.goto(`${URL_BASE}?auto&seed=${seed}`, { waitUntil: 'load' });
+await page.waitForFunction(() => window.__cin, { timeout: 60000 });
+await page.evaluate(() => window.__cin.wait(1500));
+await page.screenshot({ path: 'shots/01-opening.png' });
+await page.evaluate(async () => { const c = window.__cin; c.game.toggleCamera(); await c.wait(3500); });
+await page.screenshot({ path: 'shots/02-viewfinder-tram.png' });
+await page.evaluate(async () => { const c = window.__cin; await c.wait(3000); });
+await page.screenshot({ path: 'shots/03-viewfinder-tram-b.png' });
+await page.evaluate(async () => { const c = window.__cin; await c.lower(); await c.faceAnchor('p.station', 4.5); await c.raise(); });
+await page.screenshot({ path: 'shots/04-frame-entrance.png' });
+const ok = await page.evaluate(async () => { const c = window.__cin; await c.game.takePhoto(); await c.frames(6); return c.state(); });
+console.log('after photo', ok);
+await page.screenshot({ path: 'shots/05-held-print.png' });
+await page.evaluate(async () => { const c = window.__cin; await c.cross(); await c.wait(500); });
+await page.screenshot({ path: 'shots/06-past-concourse.png' });
+await page.evaluate(async () => { const c = window.__cin; await c.faceAnchor('p.station', 5, 1); c.game.era = 'past'; await c.frames(5); });
+await page.screenshot({ path: 'shots/07-past-street.png' });
+await page.evaluate(async () => { const c = window.__cin; const s = c.game.world.layout.spots['gutter.use']; c.place(s.x, s.z - 3, 0); await c.lookAt(s.x, 4, s.z + 1); });
+await page.screenshot({ path: 'shots/08-past-courtyard.png' });
+await page.evaluate(async () => { const c = window.__cin; c.game.era = 'present'; await c.frames(5); });
+await page.screenshot({ path: 'shots/09-present-courtyard.png' });
+await page.evaluate(async () => { const c = window.__cin; const s = c.game.world.layout.spots['plate']; c.place(s.x + 1.5, s.z - 3, 0); await c.lookAt(s.x, 0.5, s.z); });
+await page.screenshot({ path: 'shots/10-cinema-lobby.png' });
+await page.evaluate(async () => { const c = window.__cin; c.game.era = 'past'; await c.frames(5); });
+await page.screenshot({ path: 'shots/11-print-shop.png' });
+await browser.close();
